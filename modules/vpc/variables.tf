@@ -1,4 +1,4 @@
-variable "vpc_cidr_block" {
-    description = "AWS virtual private cloud classless inter domain routing"
+variable "aws_vpc_cidr_block" {
+    description = "Name of VPC CIDR Block"
     type = string
 }
