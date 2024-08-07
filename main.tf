@@ -18,21 +18,21 @@ provider "aws" {
 
 # - aws_vpc
 resource "aws_vpc" "main" {
-    cidr_block       = "0.0.0.0/0"
+    cidr_block       = "10.0.0.0/16"
     instance_tenancy = "default"
 
     tags = {
-        Name = "main"
+        Name = "tf_main_vpc"
     }
 }
 
 # - aws_subnet
 resource "aws_subnet" "main" {
     vpc_id     = aws_vpc.main.id
-    cidr_block = "0.0.0.0/0"
+    cidr_block = "10.0.1.0/24"
 
     tags = {
-        Name = "Main"
+        Name = "tf_main_subnet"
     }
 }
 
@@ -41,7 +41,7 @@ resource "aws_internet_gateway" "gw" {
     vpc_id = aws_vpc.main.id
 
     tags = {
-        Name = "main"
+        Name = "tf_main_gw"
     }
 }
 
@@ -54,25 +54,25 @@ resource "aws_route_table" "route_table_main" {
         gateway_id = aws_internet_gateway.gw.id
     }
 
-    route {
-        ipv6_cidr_block        = "::/0"
-        egress_only_gateway_id = aws_egress_only_internet_gateway.route_table_main.id
-    }
+    # route {
+    #     ipv6_cidr_block        = "::/0"
+    #     egress_only_gateway_id = aws_egress_only_internet_gateway.route_table_main.id
+    # }
 
     tags = {
-        Name = "route_table_main"
+        Name = "tf_route_table_main"
     }
 }
 # - aws_route_table_association
-resource "aws_route_table_association" "a" {
+resource "aws_route_table_association" "apublic_subnet_association" {
     subnet_id      = aws_subnet.main.id
     route_table_id = aws_route_table.route_table_main.id
 }
 
-resource "aws_route_table_association" "b" {
-    gateway_id     = aws_internet_gateway.gw.id
-    route_table_id = aws_route_table.route_table_main.id
-}
+# resource "aws_route_table_association" "b" {
+#     gateway_id     = aws_internet_gateway.gw.id
+#     route_table_id = aws_route_table.route_table_main.id
+# }
 
 # - aws_security_group
 resource "aws_security_group" "allow_tls" {
@@ -81,7 +81,7 @@ resource "aws_security_group" "allow_tls" {
     vpc_id      = aws_vpc.main.id
 
     tags = {
-        Name = "allow_tls"
+        Name = "tf_allow_tls"
     }
 }
 
@@ -121,8 +121,8 @@ resource "aws_key_pair" "deployer" {
 }
 
 
-# - aws_ami
-# data "aws_ami" "example" {
+# # - aws_ami
+# data "aws_ami" "ubuntu" {
 #     executable_users = ["self"]
 #     most_recent      = true
 #     name_regex       = "^myami-\\d{3}"
@@ -146,10 +146,15 @@ resource "aws_key_pair" "deployer" {
 
 # - aws_instance
 resource "aws_instance" "app_server" {
-    ami = "ami-830c94e3"
+    ami = "ami-08ef0be8e061f0c3f"
     instance_type = "t2.micro"
+    subnet_id     = aws_subnet.main.id  # Specify the subnet ID
+    #security_groups = [aws_security_group.allow_tls.name]  # Use the security group
+
+    # Reference the security group by ID
+    vpc_security_group_ids = [aws_security_group.allow_tls.id]
 
     tags = {
-        Name = "ExampleAppServerInstance"
+        Name = "tf_ec2_instance"
     }
 }
