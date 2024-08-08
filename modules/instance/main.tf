@@ -1,7 +1,7 @@
 resource "aws_instance" "app_server" {
-    ami = "ami-08ef0be8e061f0c3f"
+    ami = var.aws_ami_id #"ami-08ef0be8e061f0c3f"
     instance_type = "t2.micro"
-    subnet_id     = aws_subnet.main.id  # Specify the subnet ID
+    subnet_id     = var.aws_subnet_id # Specify the subnet ID
     #security_groups = [aws_security_group.allow_tls.name]  # Use the security group
 
     # Reference the security group by ID
