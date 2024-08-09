@@ -8,22 +8,19 @@ variable "deployer" {
     type = string
 }
 
-variable "aws_vpc_cidr_block" {
-    description = "Name of VPC CIDR Block"
+variable "aws_bucket_name" {
+    description = "Name of the S3 bucket. Must be unique"
     type = string
 }
 
-variable "aws_subnet_cidr_block" {
-    description = "Name of the subnet. Must be unique."
+
+variable "aws_object_acl" {
+    description = "S3 bucket object ACL"
     type = string
 }
 
-variable "aws_sg_cidr_ipv4" {
-    description = "CIDR block for the Security Group"
-    type = string  
-}
 
-variable "aws_route_cidr_block" {
-    description = "route table cidr block"
-    type = string  
+variable "aws_s3_bucket_object_ownership" {
+    description = "Name of S3 bucket object ownership"
+    type = string
 }

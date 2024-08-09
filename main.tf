@@ -8,44 +8,36 @@ resource "aws_key_pair" "deployer" {
     public_key = file(var.deployer)
 }
 
-module "vpc" {
-    source = "./modules/vpc"
-    aws_vpc_cidr_block = var.aws_vpc_cidr_block
+module "s3_bucket" {
+    source = "./modules/s3_bucket"
+    aws_bucket_name = var.aws_bucket_name
 }
 
-module "subnet" {
-    source = "./modules/subnet"
-    aws_vpc_id = module.vpc.vpc_id
-    aws_subnet_cidr_block = var.aws_subnet_cidr_block
+module "aws_s3_bucket_website_configuration" {
+    source = "./modules/s3_bucket_website_configuration"
+    aws_s3_bucket_demo_id = module.s3_bucket.id
 }
 
-module "internet_gateway" {
-    source = "./modules/internet_gateway"
-    aws_vpc_id = module.vpc.vpc_id
+module "s3_bucket_ownership_controls" {
+    source = "./modules/s3_bucket_ownership_controls"
+    aws_s3_bucket_demo_id = module.s3_bucket.id
+    aws_s3_bucket_object_ownership = var.aws_s3_bucket_object_ownership
 }
 
-module "route_table" {
-    source = "./modules/route_table"
-    aws_vpc_id = module.vpc.vpc_id
-    aws_internet_gateway_id = module.internet_gateway.internet_gw_id
-    aws_subnet_id = module.subnet.id
-    aws_route_cidr_block = var.aws_route_cidr_block
+module "s3_bucket_public_access_block" {
+    source = "./modules/s3_bucket_public_access_block"
+    aws_s3_bucket_demo_id = module.s3_bucket.id
 }
 
-module "security_group" {
-    source = "./modules/security_group"
-    aws_vpc_id = module.vpc.vpc_id
-    aws_vpc_cidr_block = var.aws_vpc_cidr_block
-    aws_sg_cidr_ipv4 = var.aws_sg_cidr_ipv4
+
+module "s3_bucket_acl" {
+    source = "./modules/s3_bucket_acl"
+    aws_s3_bucket_demo_id = module.s3_bucket.id
+    aws_object_acl = var.aws_object_acl
 }
 
-module "ami" {
-    source = "./modules/ami"
-}
-
-module "instance" {
-    source = "./modules/instance"
-    aws_ami_id = module.ami.id
-    aws_subnet_id = module.subnet.id
-    vpc_security_group_ids = module.security_group.id
+module "aws_s3_bucket_policy" {
+    source = "./modules/s3_bucket_policy"
+    aws_s3_bucket_demo_id = module.s3_bucket.id
+    aws_s3_bucket_demo_arn = module.s3_bucket.arn
 }
