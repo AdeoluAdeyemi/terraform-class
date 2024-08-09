@@ -18,22 +18,22 @@ module "aws_s3_bucket_website_configuration" {
     aws_s3_bucket_demo_id = module.s3_bucket.id
 }
 
-module "s3_bucket_ownership_controls" {
-    source = "./modules/s3_bucket_ownership_controls"
-    aws_s3_bucket_demo_id = module.s3_bucket.id
-    aws_s3_bucket_object_ownership = var.aws_s3_bucket_object_ownership
-}
+# module "s3_bucket_ownership_controls" {
+#     source = "./modules/s3_bucket_ownership_controls"
+#     aws_s3_bucket_demo_id = module.s3_bucket.id
+#     aws_s3_bucket_object_ownership = var.aws_s3_bucket_object_ownership
+# }
 
-module "s3_bucket_public_access_block" {
-    source = "./modules/s3_bucket_public_access_block"
-    aws_s3_bucket_demo_id = module.s3_bucket.id
-}
-
+# module "s3_bucket_public_access_block" {
+#     source = "./modules/s3_bucket_public_access_block"
+#     aws_s3_bucket_demo_id = module.s3_bucket.id
+# }
 
 module "s3_bucket_acl" {
     source = "./modules/s3_bucket_acl"
     aws_s3_bucket_demo_id = module.s3_bucket.id
     aws_object_acl = var.aws_object_acl
+    aws_s3_bucket_object_ownership = var.aws_s3_bucket_object_ownership
 }
 
 module "aws_s3_bucket_policy" {

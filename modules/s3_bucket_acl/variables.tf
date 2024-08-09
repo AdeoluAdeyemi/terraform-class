@@ -7,3 +7,8 @@ variable "aws_object_acl" {
     description = "S3 bucket object ACL"
     type = string
 }
+
+variable "aws_s3_bucket_object_ownership" {
+    description = "Name of S3 bucket object ownership"
+    type = string
+}
