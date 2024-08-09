@@ -1,51 +1,155 @@
-# - provider block
+#provider block
 provider "aws" {
-    region  = var.aws_region
+    region = var.aws_region
 }
 
+#aws_vpc
+resource "aws_vpc" "classwork_iac_vpc_main" {
+    cidr_block       = "10.0.0.0/16"
+    instance_tenancy = "default"
+
+    tags = {
+        Name = "classwork_iac_main"
+    }
+}
+
+
+
+# aws_subnet
+resource "aws_subnet" "classwork_iac_main_subnet" {
+    vpc_id     = aws_vpc.main.id
+    cidr_block = "10.0.1.0/24"
+
+    tags = {
+        Name = "classwork_iac_main_subnet"
+    }
+}
+
+# aws_internet_gateway
+resource "aws_internet_gateway" "classwork_iac_gw" {
+    vpc_id = aws_vpc.classwork_iac_vpc_main.id
+
+    tags = {
+        Name = "classwork_iac_main_gw"
+    }
+}
+
+# aws_route_table
+resource "aws_route_table" "classwork_iac_main_rt" {
+    vpc_id = aws_vpc.classwork_iac_vpc_main.id
+
+    route {
+        cidr_block = "10.0.1.0/24"
+        gateway_id = aws_internet_gateway.classwork_iac_gw.id
+    }
+
+    # route {
+    #     ipv6_cidr_block        = "::/0"
+    #     egress_only_gateway_id = aws_egress_only_internet_gateway.example.id
+    # }
+
+    tags = {
+        Name = "classwork_iac_main_rt"
+    }
+}
+
+# aws_route_table_association
+resource "aws_route_table_association" "classwork_iac_main_rt_assoc_a" {
+    subnet_id      = aws_subnet.classwork_iac_main_subnet.id
+    route_table_id = aws_route_table.classwork_iac_main_rt.id
+}
+
+resource "aws_route_table_association" "classwork_iac_main_rt_assoc_b" {
+    gateway_id     = aws_internet_gateway.classwork_iac_gw.id
+    route_table_id = aws_route_table.classwork_iac_main_rt.id
+}
+
+# aws_security_group
+resource "aws_security_group" "classwork_iac_sg_main" {
+    name        = "classwork_iac_sg_main"
+    description = "Allow TLS inbound traffic and all outbound traffic"
+    vpc_id      = aws_vpc.classwork_iac_vpc_main.id
+
+    tags = {
+        Name = "classwork_iac_sg_main"
+    }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "classwork_iac_sg_main_http" {
+    security_group_id = aws_security_group.classwork_iac_sg_main.id
+    cidr_ipv4         = aws_vpc.classwork_iac_vpc_main.cidr_block
+    from_port         = 80
+    ip_protocol       = "tcp"
+    to_port           = 80
+}
+
+resource "aws_vpc_security_group_ingress_rule" "classwork_iac_sg_main_https" {
+    security_group_id = aws_security_group.classwork_iac_sg_main.id
+    cidr_ipv4         = aws_vpc.classwork_iac_vpc_main.cidr_block
+    from_port         = 443
+    ip_protocol       = "tcp"
+    to_port           = 443
+}
+
+# resource "aws_vpc_security_group_ingress_rule" "allow_tls_ipv6" {
+#     security_group_id = aws_security_group.allow_tls.id
+#     cidr_ipv6         = aws_vpc.main.ipv6_cidr_block
+#     from_port         = 443
+#     ip_protocol       = "tcp"
+#     to_port           = 443
+# }
+
+resource "aws_vpc_security_group_egress_rule" "classwork_iac_sg_main_http" {
+    security_group_id = aws_security_group.allow_tls.id
+    cidr_ipv4         = "0.0.0.0/0"
+    ip_protocol       = "-1" # semantically equivalent to all ports
+}
+
+resource "aws_vpc_security_group_egress_rule" "classwork_iac_sg_main_https" {
+    security_group_id = aws_security_group.allow_tls.id
+    cidr_ipv4         = "0.0.0.0/0"
+    ip_protocol       = "-1" # semantically equivalent to all ports
+}
+
+# resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
+#   security_group_id = aws_security_group.allow_tls.id
+#   cidr_ipv6         = "::/0"
+#   ip_protocol       = "-1" # semantically equivalent to all ports
+# }
+
+
+# aws_key_pair
 resource "aws_key_pair" "deployer" {
-    key_name   = "deployer-key"
-    public_key = file(var.deployer)
+    key_name   = "deployer-key-pair"
+    public_key = file("/home/adeolu/.ssh/terraform_aws_id_rsa.pub")
 }
 
-module "vpc" {
-    source = "./modules/vpc"
-    aws_vpc_cidr_block = var.aws_vpc_cidr_block
+# aws_ami
+data "aws_ami" "ubuntu" {
+    most_recent = true
+
+    filter {
+        name   = "name"
+        values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    }
+
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
+
+    owners = ["099720109477"] # Canonical
 }
 
-module "subnet" {
-    source = "./modules/subnet"
-    aws_vpc_id = module.vpc.vpc_id
-    aws_subnet_cidr_block = var.aws_subnet_cidr_block
-}
 
-module "internet_gateway" {
-    source = "./modules/internet_gateway"
-    aws_vpc_id = module.vpc.vpc_id
-}
 
-module "route_table" {
-    source = "./modules/route_table"
-    aws_vpc_id = module.vpc.vpc_id
-    aws_internet_gateway_id = module.internet_gateway.internet_gw_id
-    aws_subnet_id = module.subnet.id
-    aws_route_cidr_block = var.aws_route_cidr_block
-}
+# aws_instance
+resource "aws_instance" "classwork_iac_sg_web" {
+    ami           = data.aws_ami.ubuntu.id
+    instance_type = "t3.micro"
+    vpc_security_group_ids = [classwork_iac_sg_main.id]
 
-module "security_group" {
-    source = "./modules/security_group"
-    aws_vpc_id = module.vpc.vpc_id
-    aws_vpc_cidr_block = var.aws_vpc_cidr_block
-    aws_sg_cidr_ipv4 = var.aws_sg_cidr_ipv4
-}
-
-module "ami" {
-    source = "./modules/ami"
-}
-
-module "instance" {
-    source = "./modules/instance"
-    aws_ami_id = module.ami.id
-    aws_subnet_id = module.subnet.id
-    vpc_security_group_ids = module.security_group.id
+    tags = {
+        Name = "classwork_iac_sg_main_instance"
+    }
 }
