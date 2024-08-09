@@ -19,6 +19,7 @@ resource "aws_vpc" "classwork_iac_vpc_main" {
 resource "aws_subnet" "classwork_iac_main_subnet" {
     vpc_id     = aws_vpc.classwork_iac_vpc_main.id
     cidr_block = "10.0.1.0/24"
+    map_public_ip_on_launch = true  # Enable public IP assignment
 
     tags = {
         Name = "classwork_iac_main_subnet"
@@ -53,11 +54,17 @@ resource "aws_route_table" "classwork_iac_main_rt" {
     }
 }
 
+
 # aws_route_table_association
-resource "aws_route_table_association" "classwork_iac_main_rt_assoc_a" {
-    subnet_id      = aws_subnet.classwork_iac_main_subnet.id
+
+resource "aws_main_route_table_association" "a" {
+    vpc_id         = aws_vpc.classwork_iac_vpc_main.id
     route_table_id = aws_route_table.classwork_iac_main_rt.id
 }
+# resource "aws_route_table_association" "classwork_iac_main_rt_assoc_a" {
+#     subnet_id      = aws_subnet.classwork_iac_main_subnet.id
+#     route_table_id = aws_route_table.classwork_iac_main_rt.id
+# }
 
 # resource "aws_route_table_association" "classwork_iac_main_rt_assoc_b" {
 #     gateway_id     = aws_internet_gateway.classwork_iac_gw.id
@@ -126,6 +133,8 @@ resource "aws_instance" "classwork_iac_sg_web" {
     instance_type = "t2.micro"
     subnet_id = aws_subnet.classwork_iac_main_subnet.id
     vpc_security_group_ids = [aws_security_group.classwork_iac_sg_main.id]
+    associate_public_ip_address = true  # Explicitly associate a public IP
+
 
     tags = {
         Name = "classwork_iac_sg_main_instance"
